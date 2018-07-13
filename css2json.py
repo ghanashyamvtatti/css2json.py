@@ -1,9 +1,9 @@
-import json as _jsonlib
+import re
 
 
 def css2json(css):
-
-    def trim(s): return s.strip()
+    def trim(s):
+        return s.strip()
 
     # Remove all comments from the css-file
     while True:
@@ -11,13 +11,15 @@ def css2json(css):
         comment_close = css.find('*/')
         if (comment_open == -1) or (comment_close == -1):
             break
-        css = css[:comment_open] + css[comment_close+2:]
+        css = css[:comment_open] + css[comment_close + 2:]
 
     # Helper method that transform an array to a object, by splitting each
     # declaration (_font: Arial_) into key (_font_) and value(_Arial_).
     def toObject(array):
         ret = {}
         for elm in array:
+            print("Elm:")
+            print(elm)
             property, value = map(trim, elm.split(':', 1))
             ret[property] = value
         return ret
@@ -40,7 +42,10 @@ def css2json(css):
 
         # Split the declaration block of the first rule into an array and remove
         # whitespace from each declaration.
-        declarations = filter(None, map(trim, css[lbracket+1:rbracket].split(';')))
+        pattern = re.compile(r'''((?:[^;"']|"[^"]*"|'[^']*')+)''')
+        elems = pattern.split(css[lbracket + 1:rbracket])
+        elems = list(filter((';').__ne__, elems))
+        declarations = filter(None, map(trim, elems))
 
         # _declaration_ is now an array reado to be transformed into an object.
         declarations = toObject(declarations)
@@ -68,6 +73,6 @@ def css2json(css):
             for key in declarations:
                 json[selector][key] = declarations[key]
 
-        css = css[rbracket+1:].strip()
+        css = css[rbracket + 1:].strip()
 
-    return _jsonlib.dumps(json)
+    return json
